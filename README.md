@@ -1,7 +1,7 @@
 ## Client(TODO)
 
 1. User triggers extension on a webpage
-   Exceptions: The url must match a fixed pattern (else, throw an error), like `youtube.com/watch?...`
+   Exceptions: The uzcrl must match a fixed pattern (else, throw an error), like `youtube.com/watch?...`
 2. Submit Url to Remote Server, as well as target language
    Exceptions: The remote server is reachable (else, throw an error, can't reach server)
 3. Server returns S3 url
@@ -47,12 +47,15 @@ Note: `python3.8` works, `python3.13` doesn't work with the `openai-whisper`
 
 
 ```
-curl -X POST \
-  http://172.104.41.96:5000/process-video \
+root@localhost:~/youtube-dubbing/server# curl -X POST \
+  http://127.0.0.1/process-video \
   -H 'Content-Type: application/json' \
   -H 'X-API-Key: 1' \
   -d '{
-    "video_url": "https://rumble.com/v5dm3v8-amazons-alexa-caught-giving-biased-political-answers.html/",
+    "video_url": "https://1a-1791.com/video/cwg9/s8/2/u/4/H/y/u4Hyt.caa.mp4?u=0&b=0",
     "target_lang": "ru"
 }'
+{"s3_url":"https://pub-c83792778c14423db6c2289e5a4e6a79.r2.dev/audio/89098f83-2ad9-486f-a505-ad73db8cb0ce.wav","status":"success"}
 ```
+
+A second request yield the same results, but it's instant(much faster).
