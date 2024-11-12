@@ -9,3 +9,4 @@ soundfile
 pathlib
 python-dotenv
 boto3
+flask

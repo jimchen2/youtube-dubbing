@@ -4,10 +4,12 @@
    Exceptions: The url must match a fixed pattern (else, throw an error), like `youtube.com/watch?...`
 2. Submit Url to Remote Server, as well as target language
    Exceptions: The remote server is reachable (else, throw an error, can't reach server)
-3. Client start polling, if received audio not error, continue
+3. Server returns S3 url
 4. Start playing the audio track from S3, so like if the video is at 4:00, start playing at 4:00 audio track from S3.
 
 ## Remote Server
+
+Note: `python3.8` works, `python3.13` doesn't work with the `openai-whisper`
 
 1. See if video url is in KV Store(basically video-url to s3-url)
 
@@ -41,3 +43,16 @@
 8. Put the S3 object ID into KV Store
 9. Return the S3 audio track url to client
 10. Clean Up
+
+
+
+```
+curl -X POST \
+  http://localhost:5000/process-video \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: your-default-secret-key' \
+  -d '{
+    "video_url": "https://www.youtube.com/shorts/vd9GxG5Qn-k/",
+    "target_lang": "ru"
+}'
+```
