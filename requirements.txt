@@ -1,0 +1,11 @@
+transformers
+torch
+numpy
+scipy
+yt-dlp
+openai-whisper
+pyannote.audio
+soundfile
+pathlib
+python-dotenv
+boto3
