@@ -48,11 +48,11 @@ Note: `python3.8` works, `python3.13` doesn't work with the `openai-whisper`
 
 ```
 curl -X POST \
-  http://localhost:5000/process-video \
+  http://172.104.41.96:5000/process-video \
   -H 'Content-Type: application/json' \
-  -H 'X-API-Key: your-default-secret-key' \
+  -H 'X-API-Key: 1' \
   -d '{
-    "video_url": "https://www.youtube.com/shorts/vd9GxG5Qn-k/",
+    "video_url": "https://rumble.com/v5dm3v8-amazons-alexa-caught-giving-biased-political-answers.html/",
     "target_lang": "ru"
 }'
 ```

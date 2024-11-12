@@ -19,26 +19,37 @@ def require_api_key(f):
 @app.route('/process-video', methods=['POST'])
 @require_api_key
 def process_video_endpoint():
+    app.logger.info('Received request')
     data = request.get_json()
     
     if not data or 'video_url' not in data:
+        app.logger.error('Missing video_url')
         return jsonify({'error': 'video_url is required'}), 400
     
     video_url = data['video_url']
     target_lang = data.get('target_lang', 'ru')
     
-    result = process_video(video_url, target_lang)
+    app.logger.info(f'Processing video: {video_url} with target language: {target_lang}')
     
-    if result:
-        return jsonify({
-            'status': 'success',
-            's3_url': result
-        })
-    else:
+    try:
+        result = process_video(video_url, target_lang)
+        
+        if result:
+            app.logger.info(f'Processing successful: {result}')
+            return jsonify({
+                'status': 'success',
+                's3_url': result
+            })
+        else:
+            app.logger.error('Processing failed')
+            return jsonify({
+                'status': 'error',
+                'message': 'Processing failed or no translation needed'
+            }), 400
+    except Exception as e:
+        app.logger.error(f'Error processing request: {str(e)}')
         return jsonify({
             'status': 'error',
-            'message': 'Processing failed or no translation needed'
-        }), 400
+            'message': str(e)
+        }), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
