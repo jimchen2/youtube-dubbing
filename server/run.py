@@ -48,6 +48,6 @@ def process_video(video_url, target_lang='ru'):
         cleanup_temp_files()
 
 if __name__ == "__main__":
-    video_url = "https://www.youtube.com/shorts/vd9GxG5Qn-k/"
+    video_url = "https://framatube.org/w/oSEfuLfAuU5qFH7p3rRJeq/"
     result = process_video(video_url, target_lang='ru')
     print(f"Processed audio URL: {result}")

@@ -47,18 +47,17 @@ def download_audio(video_url):
 
 def detect_audio_language(audio_file_path, model_size="base"):
     try:
-        model = whisper.load_model(model_size)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = whisper.load_model(model_size).to(device)
         audio = whisper.load_audio(audio_file_path)
         audio = whisper.pad_or_trim(audio)
-        mel = whisper.log_mel_spectrogram(audio).to(model.device)
+        mel = whisper.log_mel_spectrogram(audio).to(device)
         _, probs = model.detect_language(mel)
         detected_language = max(probs, key=probs.get)
-        print(detected_language)
         return detected_language
     except Exception as e:
         print(f"An error occurred: {str(e)}")
-        return None
-    
+        return None    
 
 def get_diarization(audio_path):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -66,10 +65,10 @@ def get_diarization(audio_path):
     return pipeline(audio_path)
 
 def transcribe_segments(audio_path, diarization):
-    model = whisper.load_model("base")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = whisper.load_model("base").to(device)
     results = []
 
-    # Load the audio file
     audio, sr = sf.read(audio_path)
 
     for segment, track, speaker in diarization.itertracks(yield_label=True):
@@ -88,31 +87,28 @@ def transcribe_segments(audio_path, diarization):
             'text': transcript
         })
 
-    print(results)
-
     return results
 
 
 
 def translate(source_lang, target_lang, segments):
     try:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model_name = f"Helsinki-NLP/opus-mt-{source_lang}-{target_lang}"
 
-        # Load model and tokenizer
         tokenizer = MarianTokenizer.from_pretrained(model_name)
-        model = MarianMTModel.from_pretrained(model_name)
+        model = MarianMTModel.from_pretrained(model_name).to(device)
 
-        # Translate each segment
         translated_segments = []
         for segment in segments:
             translated_segment = segment.copy()
             inputs = tokenizer(segment['text'], return_tensors="pt", padding=True)
+            # Move input tensors to GPU
+            inputs = {k: v.to(device) for k, v in inputs.items()}
             translated = model.generate(**inputs)
             translated_text = tokenizer.decode(translated[0], skip_special_tokens=True)
             translated_segment['text'] = translated_text
             translated_segments.append(translated_segment)
-
-        print(translated_segments)
 
         return translated_segments
 
@@ -124,9 +120,7 @@ def generate_tts_silero(translated_segments, target_lang):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_num_threads(4)
 
-    # Download and load the model
     local_file = 'model.pt'
-
     if not os.path.isfile(local_file):
         torch.hub.download_url_to_file('https://models.silero.ai/models/tts/ru/v4_ru.pt',
                                       local_file)
@@ -134,13 +128,12 @@ def generate_tts_silero(translated_segments, target_lang):
     model = torch.package.PackageImporter(local_file).load_pickle("tts_models", "model")
     model.to(device)
 
-    # Available Russian speakers in v4_ru model
     speakers = {
-        "SPEAKER_00": "aidar",      # male voice
-        "SPEAKER_01": "baya",       # female voice
-        "SPEAKER_02": "kseniya",    # female voice
-        "SPEAKER_03": "xenia",      # female voice
-        "SPEAKER_04": "eugene",     # male voice
+        "SPEAKER_00": "aidar",
+        "SPEAKER_01": "baya",
+        "SPEAKER_02": "kseniya",
+        "SPEAKER_03": "xenia",
+        "SPEAKER_04": "eugene",
         "DEFAULT": "xenia"
     }
 
@@ -152,10 +145,12 @@ def generate_tts_silero(translated_segments, target_lang):
 
         speaker = speakers.get(segment.get('speaker', 'DEFAULT'), speakers['DEFAULT'])
 
+        # Generate audio on GPU
         audio = model.apply_tts(text=text,
                                speaker=speaker,
                                sample_rate=48000)
 
+        # Move to CPU only for numpy conversion
         audio_numpy = audio.cpu().numpy()
         desired_length = int(segment['end'] - segment['start']) * 48000
 
@@ -169,7 +164,6 @@ def generate_tts_silero(translated_segments, target_lang):
 
     final_audio = np.concatenate(audio_segments)
     sf.write("output_audio.wav", final_audio, samplerate=48000)
-
 
 
 
